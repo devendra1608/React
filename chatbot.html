@@ -16,11 +16,26 @@
 
       function ChatInput({chatMessages,setChatMessages}) {
         const [inputText,setInputText] = React.useState('');
+        const [isLoading,setIsLoading] = React.useState(false);
         function saveInputText(event){
           setInputText(event.target.value);
         }
+        function keyPressed(event){
+          if(event.key === 'Enter'){
+            sendMessage();
+          }
+          else if(event.key === 'Escape'){
+            setInputText('');
+          }
+        }
+        async function sendMessage(){
+          if(isLoading || inputText === ''){
+            return;
+          }
 
-        function sendMessage(){
+          // set isLoading to true at the start and set it to false after everything is done.
+          setIsLoading(true);
+          setInputText('');
           const newchatMessages = [
             ...chatMessages,
             {
@@ -29,9 +44,20 @@
               id : crypto.randomUUID()
             }
           ];
-          setChatMessages(newchatMessages);
           
-          const response = Chatbot.getResponse(inputText);
+          setChatMessages([
+            ...newchatMessages,
+            // this creates a temporary loading... message.
+            // Because we dont save this message in newChatMessages,
+            // it will automatically be removed later, when we add the response.
+            {
+              message: 'Loading...',
+              sender: 'robot',
+              id: crypto.randomUUID()
+            }
+          ]);
+          
+          const response = await Chatbot.getResponseAsync(inputText);
           setChatMessages([
             ...newchatMessages,
             {
@@ -40,8 +66,8 @@
               id : crypto.randomUUID()
             }
           ]);
-          setInputText('');
-          
+          // Set isLoading to false after everything is done.
+          setIsLoading(false);
         }
         return (
           <>
@@ -49,6 +75,7 @@
               placeholder="Send a message to the Chatbot" 
               size="30"
               onChange={saveInputText}
+              onKeyDown = {keyPressed}
               value={inputText}
             />
             <button
